@@ -1,59 +1,67 @@
-import webbrowser, os
-import datetime as dt
+EMBED_CODES_FILE = ['config_files', 'embed_codes.txt']
+TEMPLATE_FILE = ['config_files', 'template.html']
+OUTPUT_FILE = ['output_files', 'webpage.html']
 
-current_time = dt.datetime.now()
-current_hour = current_time.hour
+def configure_paths():
+    '''
+    Handle different environments with different path separators ('/' vs '\' in paths)
 
-embed_codes_nl = ['ogZOuyEUaqM','6ctYQ2giDfw','rjoi8HzYjnY','alCXAH7tzT4','YsRHAojQK20',
-'tnlpjqXHQnI','DHskPDrg-fQ','r7Ncy-yY9Uw','qRAt72y7Dl0','BtxRvNYYUUo','1ZXwbqjoHQ8','_4G7EWJ7Ik8',
-'JkHgU_O6f64','yQicvIsa8W8','WalIFXKCmHU','N5Xx8r2uTLI','37UjXU-3wZ8','5QJaWg5fOAo',
-'qYhA2QqFDS8','Fksz_uENt9U','ZUPm4MT64VU','YukcuUPS05U','xbjbGNa-7eE','kginZ7__1aE']
+    P.S. This stuff is why you want to consider a config file. For further reading,
+    checkout the configparse module.
+    '''
+    from os.path import join
 
-hours = list(range(1,25))
-new_leaf_tp = dict(zip(hours,embed_codes_nl))
+    global EMBED_CODES_FILE
+    global TEMPLATE_FILE
+    global OUTPUT_FILE
 
-def video_link(hour):
-    value = new_leaf_tp[hour]
-    link = 'https://www.youtube.com/embed/{}?'.format(value)
-    print(value)
-    return link
+    EMBED_CODES_FILE = join(*EMBED_CODES_FILE)
+    TEMPLATE_FILE = join(*TEMPLATE_FILE)
+    OUTPUT_FILE = join(*OUTPUT_FILE)
+
+def display_page():
+    '''
+    Display a webpage with an appropriate link based on the hour of the day.
+    '''
+    video_url = get_video_url()
+    create_page(video_url)
+    
+    from webbrowser import open_new_tab
+    open_new_tab(OUTPUT_FILE)
 
 def create_page(video_url):
-    filename = 'helloworld.html'
-    f = open(filename,'w+')
-    message = """<!DOCTYPE html5>
-    <html>
-    <head>
+    template = get_template_file()
+    page = None
 
-    <title> Name of page here I guess </title>
-    </head>
-    <body>
- 
-    <iframe width="420" height="315" src={URL}>
-    </iframe>
-    
-    <p>
-    <h1>If I am actually correct</h1>
-    </p>
+    with open(OUTPUT_FILE, 'w') as output_file:
+        page = template.format(URL=video_url)
+        output_file.write(page)
 
-    <p2>
-    <h2>A little text down here</h2>
-    </p2>
-    
-    <p3>
-    <h3>Finish it up down here</h3>
-    </p3>
-    
-    </body>
-    </html>"""
+def get_template_file():
+    '''
+    Simply loads the template file and returns the string.
+    '''
+    with open(TEMPLATE_FILE, 'r') as template:
+        return template.read()
 
-    complete_message = message.format(URL=video_url)
-    f.write(complete_message)
-    f.close()
-    page = webbrowser.open_new_tab(filename)
-    return page
+def get_video_url():
+    '''
+    Return a YouTube embed url based on the hour of the day.
+    '''
+    import datetime
 
-url = video_link(current_hour)
-post = create_page(url)
+    embed_codes = get_embed_codes()
+    current_time = datetime.datetime.now()
+    index = (current_time.hour - 1) % 24
+    return 'https://www.youtube.com/embed/{}?'.format(embed_codes[index])
 
-print(url)
+def get_embed_codes():
+    '''
+    Load a list of 24 embed codes from a file.
+    '''
+    with open(EMBED_CODES_FILE, 'r') as embed_file:
+        return [line.strip() for line in embed_file]
+
+if __name__ == '__main__':
+    configure_paths()
+    display_page()
